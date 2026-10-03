@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>spz-replay</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ── Browser ─────────────────────────────────────────────── -->
+  <div id="browser" class="hidden">
+    <div class="br-panel">
+      <div class="br-head">
+        <div>
+          <div class="eyebrow"><span class="dot"></span> RACE REPLAYS</div>
+          <div class="br-title">Watch a race back</div>
+        </div>
+        <div class="br-actions">
+          <span id="br-rec" class="chip chip-rec hidden">● RECORDING</span>
+          <button id="br-refresh" class="btn ghost">REFRESH</button>
+          <button id="br-close" class="btn ghost"><span class="kc">ESC</span> CLOSE</button>
+        </div>
+      </div>
+      <div class="br-cols">
+        <span>TRACK</span><span>WINNER</span><span>DRIVERS</span><span>LENGTH</span><span>WHEN</span><span></span>
+      </div>
+      <div id="br-list" class="br-list"></div>
+      <div id="br-empty" class="br-empty hidden">No replays yet. Every race is recorded automatically.</div>
+      <div id="br-error" class="br-error hidden"></div>
+    </div>
+  </div>
+
+  <!-- ── Loading ─────────────────────────────────────────────── -->
+  <div id="loading" class="hidden">
+    <div class="ld-card">
+      <div class="eyebrow"><span class="dot"></span> LOADING REPLAY</div>
+      <div id="ld-track" class="ld-track">—</div>
+      <div class="ld-bar"><i></i></div>
+    </div>
+  </div>
+
+  <!-- ── Player ──────────────────────────────────────────────── -->
+  <div id="player" class="hidden">
+
+    <!-- top-right: race meta + running order at this moment -->
+    <div id="pl-board" class="pl-board">
+      <div class="rf-top">
+        <span class="rf-eyebrow"><span class="dot rec"></span> REPLAY</span>
+        <span id="pl-lap" class="rf-lap">LAP 1/1</span>
+      </div>
+      <div class="rf-meta">
+        <span id="pl-track" class="rf-track">—</span>
+        <span id="pl-class" class="rf-class"></span>
+      </div>
+      <div id="pl-list" class="rf-list"></div>
+    </div>
+
+    <!-- bottom: controls · driver · timeline -->
+    <div id="pl-bar" class="pl-bar">
+      <div class="spec-top">
+        <div class="eyebrow"><span class="dot rec"></span> REPLAY · <span id="pl-cam">CHASE</span></div>
+        <div class="spec-ctrl">
+          <span class="kc">SPACE</span><span class="fsep">PLAY</span>
+          <span class="kc">←</span><span class="kc">→</span><span class="fsep">SEEK</span>
+          <span class="kc">↑</span><span class="kc">↓</span><span class="fsep">SPEED</span>
+          <span class="kc">Q</span><span class="kc">E</span><span class="fsep">DRIVER</span>
+          <span id="pl-counter" class="counter">1 / 1</span>
+          <span class="kc">C</span><span class="fsep">CAMERA</span>
+          <span class="kc">H</span><span class="fsep">RECORD VIEW</span>
+          <span class="kc">M</span><span class="fsep">MOUSE</span>
+          <span class="kc esc">⌫</span><span class="fsep">EXIT</span>
+        </div>
+      </div>
+
+      <div class="spec-row">
+        <div class="mod mod-id">
+          <span id="pl-pos" class="id-pos">P1</span>
+          <span id="pl-num" class="id-num hidden">00</span>
+          <span id="pl-name" class="id-name">—</span>
+          <span id="pl-crew" class="chip chip-crew hidden"></span>
+          <span id="pl-final" class="chip chip-rank hidden"></span>
+        </div>
+        <div class="mod">
+          <span class="mod-label">LAP</span>
+          <span id="pl-lapv" class="status-val">1</span>
+        </div>
+        <div class="mod mod-speed">
+          <span class="mod-label">SPEED</span>
+          <span id="pl-speed" class="speed-val">0</span>
+          <span class="speed-unit">KM/H</span>
+          <span id="pl-car" class="speed-veh">—</span>
+        </div>
+      </div>
+
+      <div class="mod mod-time">
+        <button id="pl-play" class="play" title="Play / pause"></button>
+        <span id="pl-t" class="time">0:00.0</span>
+        <div id="pl-track-bar" class="tl">
+          <div id="pl-fill" class="tl-fill"></div>
+          <div id="pl-knob" class="tl-knob"></div>
+        </div>
+        <span id="pl-dur" class="time dim">0:00.0</span>
+        <span id="pl-speedx" class="chip chip-speed">1×</span>
+      </div>
+    </div>
+
+    <div id="pl-rvhint" class="rv-hint hidden"><span class="kc">H</span> SHOW UI</div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
