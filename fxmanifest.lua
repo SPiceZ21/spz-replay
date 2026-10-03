@@ -3,7 +3,7 @@ game 'gta5'
 
 name 'spz-replay'
 description 'SPiceZ Race Replays — records every race server-side, stores it compressed in the DB, and plays it back with TV / chase / heli / bonnet / wheel / free cameras, driver switching and a clean record view.'
-version '1.1.0'
+version '1.7.0'
 author 'SPiceZ-Core'
 lua54 'yes'
 
@@ -14,6 +14,7 @@ shared_scripts {
 }
 
 client_scripts {
+  'client/recorder.lua',
   'client/cameras.lua',
   'client/player.lua',
   'client/main.lua',

@@ -59,17 +59,10 @@
     <!-- bottom: controls · driver · timeline -->
     <div id="pl-bar" class="pl-bar">
       <div class="spec-top">
-        <div class="eyebrow"><span class="dot rec"></span> REPLAY · <span id="pl-cam">CHASE</span></div>
-        <div class="spec-ctrl">
-          <span class="kc">SPACE</span><span class="fsep">PLAY</span>
-          <span class="kc">←</span><span class="kc">→</span><span class="fsep">SEEK</span>
-          <span class="kc">↑</span><span class="kc">↓</span><span class="fsep">SPEED</span>
-          <span class="kc">Q</span><span class="kc">E</span><span class="fsep">DRIVER</span>
-          <span id="pl-counter" class="counter">1 / 1</span>
-          <span class="kc">C</span><span class="fsep">CAMERA</span>
-          <span class="kc">H</span><span class="fsep">RECORD VIEW</span>
-          <span class="kc">M</span><span class="fsep">MOUSE</span>
-          <span class="kc esc">⌫</span><span class="fsep">EXIT</span>
+        <div class="eyebrow"><span class="dot rec"></span> REPLAY</div>
+        <div class="top-chips">
+          <span class="chip chip-cam">CAM · <b id="pl-cam">CHASE</b></span>
+          <span class="chip chip-rank">DRIVER <b id="pl-counter">1 / 1</b></span>
         </div>
       </div>
 
@@ -102,8 +95,27 @@
         </div>
         <span id="pl-dur" class="time dim">0:00.0</span>
         <span id="pl-speedx" class="chip chip-speed">1×</span>
+        <button id="pl-rec" class="tbtn rec" title="Record a Rockstar Editor clip (B)"><i></i><span>REC</span></button>
+        <button id="pl-editor" class="tbtn" title="Open the Rockstar Editor (G)">EDITOR</button>
+      </div>
+
+      <div class="keys">
+        <span class="k"><span class="kc">SPACE</span>PLAY</span>
+        <span class="k"><span class="kc">←</span><span class="kc">→</span>SEEK 5S</span>
+        <span class="k"><span class="kc">↑</span><span class="kc">↓</span>SPEED</span>
+        <span class="k"><span class="kc">Q</span><span class="kc">E</span>DRIVER</span>
+        <span class="k"><span class="kc">C</span>CAMERA</span>
+        <span class="k"><span class="kc">H</span>HIDE UI</span>
+        <span class="k"><span class="kc">B</span>REC</span>
+        <span class="k"><span class="kc">G</span>EDITOR</span>
+        <span class="k"><span class="kc">M</span>MOUSE</span>
+        <span class="k"><span class="kc esc">⌫</span>EXIT</span>
       </div>
     </div>
+
+    <!-- Rockstar Editor recording. Stays visible even with the UI hidden;
+         the game records its own state, so this never lands in the clip. -->
+    <div id="pl-recbadge" class="rec-badge hidden"><i></i> REC <span id="pl-rect">0:00</span></div>
 
     <div id="pl-rvhint" class="rv-hint hidden"><span class="kc">H</span> SHOW UI</div>
   </div>

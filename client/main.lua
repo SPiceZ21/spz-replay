@@ -3,7 +3,8 @@
 -- Controls while watching (all game input is disabled, so nothing leaks into
 -- the parked ped):
 --   SPACE play/pause · ←/→ seek · ↑/↓ speed · Q/E driver · C camera
---   H record view (hides every overlay) · M mouse for the timeline · BACKSPACE exit
+--   H hide UI · B Rockstar Editor rec/stop · G open Rockstar Editor
+--   M mouse for the timeline · BACKSPACE exit
 
 local watching = false
 local saved = nil          -- the viewer's ped state, restored on exit
@@ -66,7 +67,19 @@ exports("WatchRace", watchRace)
 local function parkPed(at)
     local ped = PlayerPedId()
     saved = { coords = GetEntityCoords(ped), heading = GetEntityHeading(ped), veh = GetVehiclePedIsIn(ped, false) }
-    if saved.veh ~= 0 then TaskLeaveVehicle(ped, saved.veh, 16) Wait(0) end
+    -- Any other car they're driving (vMenu, etc.) is deleted too, like /dv.
+    -- The spz-vehicles car was already despawned by the server.
+    if saved.veh ~= 0 and DoesEntityExist(saved.veh) and GetPedInVehicleSeat(saved.veh, -1) == ped then
+        NetworkRequestControlOfEntity(saved.veh)
+        local deadline = GetGameTimer() + 1000
+        while not NetworkHasControlOfEntity(saved.veh) and GetGameTimer() < deadline do Wait(0) end
+        SetEntityAsMissionEntity(saved.veh, true, true)
+        DeleteVehicle(saved.veh)
+    elseif saved.veh ~= 0 then
+        TaskLeaveVehicle(ped, saved.veh, 16)
+    end
+    saved.veh = 0
+    Wait(0)
     SetEntityCoords(ped, at.x, at.y, at.z + 2.0, false, false, false, false)
     FreezeEntityPosition(ped, true)
     SetEntityVisible(ped, false, false)
@@ -87,8 +100,44 @@ local function restorePed()
     saved = nil
 end
 
-local function stop()
+-- ── Rockstar Editor ──────────────────────────────────────────────────────────
+-- B starts / stops a Rockstar Editor clip of the replay (the game records its
+-- own state, so the replay UI never ends up in the clip). G saves any running
+-- clip, leaves the replay and opens the Rockstar Editor.
+local recStart = nil
+
+local function recToggle()
+    if IsRecording() then
+        StopRecordingAndSaveClip()
+        recStart = nil
+        notify("Clip saved to the Rockstar Editor.", "success")
+    else
+        StartRecording(1)
+        recStart = GetGameTimer()
+        notify("Recording a Rockstar Editor clip. B to stop and save.", "inform")
+    end
+end
+
+local function saveRecording()
+    if IsRecording() then
+        StopRecordingAndSaveClip()
+        notify("Clip saved to the Rockstar Editor.", "success")
+    end
+    recStart = nil
+end
+
+local stop
+
+local function openEditor()
+    saveRecording()
+    stop()
+    -- Let the camera, cars and bucket switch settle before the editor loads.
+    SetTimeout(600, function() ActivateRockstarEditor() end)
+end
+
+stop = function()
     if not watching then return end
+    saveRecording()
     watching = false
     Cams.Stop()
     Play.Unload()
@@ -118,6 +167,7 @@ local function pushHud(s)
             finalPos = m.pos, time = m.time, dnf = m.dnf,
         },
         count    = #Play.metas,
+        rec      = recStart and (GetGameTimer() - recStart) or nil,
         board    = Play.Board(),
     })
 end
@@ -131,7 +181,8 @@ local function run()
 
     while watching do
         local now = GetGameTimer()
-        local dt = now - last
+        -- Frame time as a float: integer ms deltas stutter at high framerates.
+        local dt = math.min(GetFrameTime(), 0.1) * 1000
         last = now
 
         DisableAllControlActions(0)
@@ -139,14 +190,14 @@ local function run()
         EnableControlAction(0, 249, true)   -- push to talk
 
         if IsDisabledControlJustPressed(0, 22) then Play.paused = not Play.paused   -- SPACE
-            if not Play.paused and Play.t >= Play.duration then Play.Seek(0) end
+            if not Play.paused and Play.t >= Play.duration then Play.t = 0 end
         end
-        if IsDisabledControlJustPressed(0, 174) then Play.Seek(Play.t - Config.SeekSec * 1000) end   -- ←
-        if IsDisabledControlJustPressed(0, 175) then Play.Seek(Play.t + Config.SeekSec * 1000) end   -- →
+        if IsDisabledControlJustPressed(0, 174) then Play.Seek(Play.Goal() - Config.SeekSec * 1000) end   -- ←
+        if IsDisabledControlJustPressed(0, 175) then Play.Seek(Play.Goal() + Config.SeekSec * 1000) end   -- →
         if IsDisabledControlJustPressed(0, 172) then Play.speedIdx = math.min(#Config.Speeds, Play.speedIdx + 1) end -- ↑
         if IsDisabledControlJustPressed(0, 173) then Play.speedIdx = math.max(1, Play.speedIdx - 1) end             -- ↓
-        if IsDisabledControlJustPressed(0, 44) and Play.Switch(-1) then Cams.OnTargetChanged() end   -- Q
-        if IsDisabledControlJustPressed(0, 38) and Play.Switch(1) then Cams.OnTargetChanged() end    -- E
+        if IsDisabledControlJustPressed(0, 44) and Play.Switch(-1) then Play.lastSeg = nil; Cams.OnTargetChanged(GetEntityCoords(Play.cars[Play.target])) end   -- Q
+        if IsDisabledControlJustPressed(0, 38) and Play.Switch(1) then Play.lastSeg = nil; Cams.OnTargetChanged(GetEntityCoords(Play.cars[Play.target])) end    -- E
         if IsDisabledControlJustPressed(0, 26) then Cams.Cycle(1) end                                 -- C
         if IsDisabledControlJustPressed(0, 74) then nui("recordView", {}) end                         -- H
         if IsDisabledControlJustPressed(0, 244) then                                                  -- M
@@ -154,12 +205,15 @@ local function run()
             SetNuiFocus(cursor, cursor)
             SetNuiFocusKeepInput(cursor)
         end
+        if IsDisabledControlJustPressed(0, 29) then recToggle() end                                   -- B
+        if IsDisabledControlJustPressed(0, 47) then openEditor(); break end                           -- G
         if IsDisabledControlJustPressed(0, 177) then stop(); break end                               -- BACKSPACE
 
         local s = Play.Step(dt)
+        if Play.cutNow then Play.cutNow = false; Cams.Snap() end
         Cams.Update(Play.cars[Play.target], Play.tracks[Play.target], Play.target, dt / 1000)
 
-        if now - lastHud > 100 then
+        if now - lastHud > 50 then
             lastHud = now
             pushHud(s)
         end
@@ -203,9 +257,11 @@ RegisterNUICallback("control", function(d, cb)
     if watching then
         if d.op == "toggle" then Play.paused = not Play.paused
         elseif d.op == "camera" then Cams.Cycle(1)
-        elseif d.op == "next" and Play.Switch(1) then Cams.OnTargetChanged()
-        elseif d.op == "prev" and Play.Switch(-1) then Cams.OnTargetChanged()
-        elseif d.op == "target" and Play.cars[tonumber(d.id)] then Play.target = tonumber(d.id); Cams.OnTargetChanged()
+        elseif d.op == "next" and Play.Switch(1) then Play.lastSeg = nil; Cams.OnTargetChanged(GetEntityCoords(Play.cars[Play.target]))
+        elseif d.op == "prev" and Play.Switch(-1) then Play.lastSeg = nil; Cams.OnTargetChanged(GetEntityCoords(Play.cars[Play.target]))
+        elseif d.op == "target" and Play.cars[tonumber(d.id)] then Play.target = tonumber(d.id); Play.lastSeg = nil; Cams.OnTargetChanged(GetEntityCoords(Play.cars[Play.target]))
+        elseif d.op == "record" then recToggle()
+        elseif d.op == "editor" then openEditor()
         elseif d.op == "exit" then stop() end
     end
     cb("ok")
@@ -213,6 +269,7 @@ end)
 
 AddEventHandler("onResourceStop", function(res)
     if res ~= GetCurrentResourceName() or not watching then return end
+    if IsRecording() then StopRecordingAndSaveClip() end
     watching = false
     Cams.Stop()
     Play.Unload()

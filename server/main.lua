@@ -81,6 +81,10 @@ local function openReplay(src, where, key)
     ]]):format(where), { key })
     if not row or not row.frames then return false, "No replay stored for that race." end
 
+    -- Same as /dv: the player's spawned car goes before they leave for the
+    -- replay bucket, instead of being left parked in the world.
+    pcall(function() exports["spz-vehicles"]:DespawnVehicle(src) end)
+
     local bucket = exports["spz-core"]:CreateBucket("replay")
     SetRoutingBucketPopulationEnabled(bucket, false)
     Watching[src] = { bucket = bucket, back = GetPlayerRoutingBucket(src) }

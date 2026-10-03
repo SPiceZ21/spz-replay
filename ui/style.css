@@ -15,7 +15,11 @@
   --font-mono: ui-monospace, 'JetBrains Mono', monospace;
   --mod-bg: rgba(9, 10, 13, 0.9);
   --mod-border: rgba(255, 255, 255, 0.07);
+  /* Overall size of the replay UI. Everything is laid out in px at 1x and
+     zoomed, so one number scales the browser, the board and the bar. */
+  --ui-scale: 1.4;
 }
+.br-panel, .ld-card, .pl-board, .pl-bar, .rv-hint, .rec-badge { zoom: var(--ui-scale); }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
@@ -90,7 +94,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 .br-panel {
-  width: 820px; max-height: 76vh;
+  width: 820px; max-height: calc(80vh / var(--ui-scale));   /* zoom scales this too */
   display: flex; flex-direction: column; gap: 10px;
   padding: 18px;
   background: var(--mod-bg);
@@ -253,11 +257,14 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   content: ''; position: absolute; left: 0; right: 0; top: 7px; height: 3px;
   background: rgba(255, 255, 255, 0.1); border-radius: 2px;
 }
-.tl-fill { position: absolute; left: 0; top: 7px; height: 3px; width: 0; background: var(--primary); border-radius: 2px; box-shadow: 0 0 8px rgba(var(--primary-rgb), 0.6); }
+.tl-fill { transition: width 60ms linear; position: absolute; left: 0; top: 7px; height: 3px; width: 0; background: var(--primary); border-radius: 2px; box-shadow: 0 0 8px rgba(var(--primary-rgb), 0.6); }
 .tl-knob {
   position: absolute; top: 3px; width: 11px; height: 11px; margin-left: -5px;
   border-radius: 50%; background: #fff; border: 2px solid var(--primary); left: 0;
+  transition: left 60ms linear, transform 0.12s ease;
 }
+.tl:hover .tl-knob, .tl.drag .tl-knob { transform: scale(1.25); }
+.tl.drag .tl-fill, .tl.drag .tl-knob { transition: none; }
 
 .rv-hint {
   position: absolute; right: 18px; bottom: 14px;
@@ -266,3 +273,53 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   animation: rvFade 3s ease forwards;
 }
 @keyframes rvFade { 0%, 60% { opacity: 1; } 100% { opacity: 0; } }
+
+/* ── Rockstar Editor ─────────────────────────────────────── */
+.tbtn {
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 20px; padding: 0 8px;
+  font-size: 7px; font-weight: 700; letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.tbtn:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
+.tbtn.rec i { width: 6px; height: 6px; border-radius: 50%; background: var(--red); }
+.tbtn.rec.on { color: #fff; background: rgba(255, 59, 48, 0.2); border-color: rgba(255, 59, 48, 0.55); }
+.tbtn.rec.on i { animation: pulse 1s ease-in-out infinite; }
+
+.rec-badge {
+  position: absolute; top: 22px; left: 50%; transform: translateX(-50%);
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 22px; padding: 0 10px;
+  font-size: 8px; font-weight: 800; letter-spacing: 0.18em;
+  background: var(--mod-bg);
+  border: 1px solid rgba(255, 59, 48, 0.5);
+  border-radius: 4px;
+  color: #fff;
+}
+.rec-badge i { width: 7px; height: 7px; border-radius: 50%; background: var(--red); box-shadow: 0 0 8px var(--red); animation: pulse 1s ease-in-out infinite; }
+.rec-badge span { font-family: var(--font-mono); letter-spacing: 0.04em; color: rgba(255, 255, 255, 0.8); }
+
+/* ── Bar layout v2: chips up top, key hints in their own row ─────────────── */
+.eyebrow, .chip, .kc, .k { white-space: nowrap; }
+.top-chips { display: flex; align-items: center; gap: 5px; }
+.top-chips .chip { font-size: 8px; padding: 2px 7px; color: rgba(255, 255, 255, 0.55); }
+.top-chips .chip b { color: #fff; font-weight: 800; margin-left: 3px; }
+.chip-cam { border-color: rgba(var(--primary-rgb), 0.4); background: rgba(var(--primary-rgb), 0.1); }
+.chip-cam b { color: var(--primary) !important; }
+
+.keys {
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
+  gap: 4px 12px;
+  padding: 2px 4px 0;
+}
+.keys .k {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 7px; font-weight: 700; letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.4);
+}
+.keys .kc { margin-right: 1px; }
+.speed-veh { text-transform: uppercase; letter-spacing: 0.04em; }

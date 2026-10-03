@@ -128,10 +128,14 @@ function renderPlayer(d) {
   $('pl-t').textContent = fmtClock(d.t)
   $('pl-dur').textContent = fmtClock(d.duration)
   $('pl-speedx').textContent = `${d.speed}×`
+  const rec = d.rec != null
+  $('pl-rec').classList.toggle('on', rec)
+  $('pl-rec').querySelector('span').textContent = rec ? 'STOP' : 'REC'
+  $('pl-recbadge').classList.toggle('hidden', !rec)
+  if (rec) $('pl-rect').textContent = fmtLen(d.rec)
 
-  const pct = Math.min(100, (d.t / duration) * 100)
-  $('pl-fill').style.width = pct + '%'
-  $('pl-knob').style.left = pct + '%'
+  // While dragging, the knob follows the mouse, not the (gliding) clock.
+  if (!dragging) setBar(d.t / duration)
 
   const board = d.board || []
   const ti = board.findIndex((b) => b.target)
@@ -154,18 +158,41 @@ $('pl-list').onclick = (e) => {
   if (row) post('control', { op: 'target', id: Number(row.dataset.id) })
 }
 $('pl-play').onclick = () => post('control', { op: 'toggle' })
+$('pl-rec').onclick = () => post('control', { op: 'record' })
+$('pl-editor').onclick = () => post('control', { op: 'editor' })
 
-// Timeline scrubbing (mouse mode).
+// Timeline scrubbing (mouse mode). The knob moves instantly under the
+// mouse; seeks are sent at most every 50 ms, and the game glides its clock to
+// each one, so dragging plays the race through smoothly instead of jumping.
 const tl = $('pl-track-bar')
 let dragging = false
-function seekAt(clientX) {
+let lastSeek = 0
+let pendingK = null
+function setBar(k) {
+  const pct = Math.min(100, Math.max(0, k * 100))
+  $('pl-fill').style.width = pct + '%'
+  $('pl-knob').style.left = pct + '%'
+}
+function seekAt(clientX, force) {
   const r = tl.getBoundingClientRect()
   const k = Math.min(1, Math.max(0, (clientX - r.left) / r.width))
-  post('seek', { t: Math.round(k * duration) })
+  setBar(k)
+  pendingK = k
+  const now = performance.now()
+  if (force || now - lastSeek > 50) {
+    lastSeek = now
+    post('seek', { t: Math.round(k * duration) })
+    pendingK = null
+  }
 }
-tl.addEventListener('mousedown', (e) => { dragging = true; seekAt(e.clientX) })
+tl.addEventListener('mousedown', (e) => { dragging = true; tl.classList.add('drag'); seekAt(e.clientX, true) })
 window.addEventListener('mousemove', (e) => { if (dragging) seekAt(e.clientX) })
-window.addEventListener('mouseup', () => { dragging = false })
+window.addEventListener('mouseup', (e) => {
+  if (!dragging) return
+  dragging = false
+  tl.classList.remove('drag')
+  seekAt(e.clientX, true)   // land exactly where the mouse was let go
+})
 
 function toggleRecordView() {
   const root = $('player')
