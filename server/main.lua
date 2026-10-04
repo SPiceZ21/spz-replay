@@ -51,7 +51,14 @@ end
 
 -- ── Browser ──────────────────────────────────────────────────────────────────
 
+local function analytics(feature)
+    if GetResourceState("spz-analytics") == "started" then
+        pcall(function() exports["spz-analytics"]:Track(feature) end)
+    end
+end
+
 lib.callback.register("spz-replay:list", function(src)
+    analytics("replays_browser")
     local rows = MySQL.query.await([[
         SELECT id, track, race_type, laps, car_class, duration_ms, racer_count, winner,
                size_bytes, UNIX_TIMESTAMP(created_at) AS created
@@ -63,6 +70,9 @@ end)
 lib.callback.register("spz-replay:delete", function(src, id)
     if not canDelete(src) then return false end
     MySQL.update.await("DELETE FROM race_replays WHERE id = ?", { tonumber(id) })
+    if GetResourceState("spz-analytics") == "started" then
+        pcall(function() exports["spz-analytics"]:AdminAction(src, "replay_delete", "replay #" .. tostring(id)) end)
+    end
     return true
 end)
 
@@ -98,10 +108,12 @@ local function openReplay(src, where, key)
 end
 
 lib.callback.register("spz-replay:open", function(src, id)
+    analytics("replay_watch")
     return openReplay(src, "id = ?", tonumber(id))
 end)
 
 lib.callback.register("spz-replay:openByRace", function(src, raceId)
+    analytics("replay_watch")
     return openReplay(src, "race_id = ?", tostring(raceId))
 end)
 
