@@ -129,7 +129,6 @@ local function replayIdsFor(raceIds)
     for _, r in ipairs(rows) do out[r.race_id] = true end
     return out
 end
-exports("HasReplays", replayIdsFor)
 lib.callback.register("spz-replay:hasReplays", function(_, raceIds) return replayIdsFor(raceIds) end)
 
 local function stopWatching(src)
