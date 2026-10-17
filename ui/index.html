@@ -99,7 +99,8 @@
         <button id="pl-editor" class="tbtn" title="Open the Rockstar Editor (G)">EDITOR</button>
       </div>
 
-      <div class="keys">
+      <!-- filled from the live key bindings (client/main.lua → 'keys') -->
+      <div class="keys" id="pl-keys">
         <span class="k"><span class="kc">SPACE</span>PLAY</span>
         <span class="k"><span class="kc">←</span><span class="kc">→</span>SEEK 5S</span>
         <span class="k"><span class="kc">↑</span><span class="kc">↓</span>SPEED</span>
@@ -117,7 +118,7 @@
          the game records its own state, so this never lands in the clip. -->
     <div id="pl-recbadge" class="rec-badge hidden"><i></i> REC <span id="pl-rect">0:00</span></div>
 
-    <div id="pl-rvhint" class="rv-hint hidden"><span class="kc">H</span> SHOW UI</div>
+    <div id="pl-rvhint" class="rv-hint hidden"><span class="kc" id="pl-rvkey">H</span> SHOW UI</div>
   </div>
 
   <script src="app.js"></script>

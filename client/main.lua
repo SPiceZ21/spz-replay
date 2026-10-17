@@ -1,7 +1,8 @@
 -- client/main.lua — replay browser, the watch session, and its controls.
 --
 -- Controls while watching (all game input is disabled, so nothing leaks into
--- the parked ped):
+-- the parked ped). Every one is a key mapping — rebindable in Settings → Key
+-- Bindings → FiveM — and the on-screen hint row shows the LIVE binding:
 --   SPACE play/pause · ←/→ seek · ↑/↓ speed · Q/E driver · C camera
 --   H hide UI · B Rockstar Editor rec/stop · G open Rockstar Editor
 --   M mouse for the timeline · BACKSPACE exit
@@ -11,6 +12,49 @@ local saved = nil          -- the viewer's ped state, restored on exit
 local cursor = false
 
 local function nui(action, data) SendNUIMessage({ action = action, data = data }) end
+
+-- ── Keys ─────────────────────────────────────────────────────────────────────
+-- Key mappings, not raw controls: they work with all game input disabled, can
+-- be rebound, and spz-core KeyFor can read the binding back for the hints.
+local KEYS = {   -- name = { default key, description, controller button (or nil) }
+    play      = { "SPACE",  "Replay: play / pause",           "RDOWN_INDEX" },
+    seekback  = { "LEFT",   "Replay: seek back",              "LLEFT_INDEX" },
+    seekfwd   = { "RIGHT",  "Replay: seek forward",           "LRIGHT_INDEX" },
+    speedup   = { "UP",     "Replay: faster",                 "LUP_INDEX" },
+    speeddown = { "DOWN",   "Replay: slower",                 "LDOWN_INDEX" },
+    prev      = { "Q",      "Replay: previous driver",        "L1_INDEX" },
+    next      = { "E",      "Replay: next driver",            "R1_INDEX" },
+    camera    = { "C",      "Replay: change camera",          "RUP_INDEX" },
+    hideui    = { "H",      "Replay: hide / show UI",         "RLEFT_INDEX" },
+    mouse     = { "M",      "Replay: mouse for the timeline", nil },
+    rec       = { "B",      "Replay: Rockstar Editor record", "SELECT_INDEX" },
+    editor    = { "G",      "Replay: open Rockstar Editor",   nil },
+    exit      = { "BACK",   "Replay: exit",                   "RRIGHT_INDEX" },
+}
+local pressed = {}
+local watchingRef = function() return watching end
+for name, k in pairs(KEYS) do
+    RegisterCommand("+replay_" .. name, function() if watchingRef() then pressed[name] = true end end, false)
+    RegisterCommand("-replay_" .. name, function() end, false)
+    RegisterKeyMapping("+replay_" .. name, k[2], "keyboard", k[1])
+    if k[3] then RegisterKeyMapping("+replay_" .. name, k[2] .. " (controller)", "PAD_DIGITALBUTTON", k[3]) end
+end
+local function take(name)
+    if pressed[name] then pressed[name] = nil; return true end
+    return false
+end
+
+-- live labels for the hint row (re-sent while watching, so rebinds show up)
+local PRETTY_DEFAULT = { SPACE = "SPACE", LEFT = "←", RIGHT = "→", UP = "↑", DOWN = "↓", BACK = "BKSP" }
+local function liveKeys()
+    local out = {}
+    for name, k in pairs(KEYS) do
+        local def = PRETTY_DEFAULT[k[1]] or k[1]
+        local ok, v = pcall(function() return exports["spz-core"]:KeyFor("+replay_" .. name, def, k[3]) end)
+        out[name] = (ok and v) or def
+    end
+    return out
+end
 
 local function notify(msg, t)
     lib.notify({ title = "Replays", description = msg, type = t or "inform" })
@@ -178,6 +222,9 @@ local function run()
     local T0 = Play.tracks[Play.target]
     Cams.Start(vector3(T0.x[1], T0.y[1], T0.z[1]))
     DisplayRadar(false)
+    pressed = {}
+    local keysAt = nil
+    nui("keys", liveKeys())
 
     while watching do
         local now = GetGameTimer()
@@ -189,25 +236,27 @@ local function run()
         EnableControlAction(0, 245, true)   -- chat (T)
         EnableControlAction(0, 249, true)   -- push to talk
 
-        if IsDisabledControlJustPressed(0, 22) then Play.paused = not Play.paused   -- SPACE
+        if take("play") then Play.paused = not Play.paused
             if not Play.paused and Play.t >= Play.duration then Play.t = 0 end
         end
-        if IsDisabledControlJustPressed(0, 174) then Play.Seek(Play.Goal() - Config.SeekSec * 1000) end   -- ←
-        if IsDisabledControlJustPressed(0, 175) then Play.Seek(Play.Goal() + Config.SeekSec * 1000) end   -- →
-        if IsDisabledControlJustPressed(0, 172) then Play.speedIdx = math.min(#Config.Speeds, Play.speedIdx + 1) end -- ↑
-        if IsDisabledControlJustPressed(0, 173) then Play.speedIdx = math.max(1, Play.speedIdx - 1) end             -- ↓
-        if IsDisabledControlJustPressed(0, 44) and Play.Switch(-1) then Play.lastSeg = nil; Cams.OnTargetChanged(GetEntityCoords(Play.cars[Play.target])) end   -- Q
-        if IsDisabledControlJustPressed(0, 38) and Play.Switch(1) then Play.lastSeg = nil; Cams.OnTargetChanged(GetEntityCoords(Play.cars[Play.target])) end    -- E
-        if IsDisabledControlJustPressed(0, 26) then Cams.Cycle(1) end                                 -- C
-        if IsDisabledControlJustPressed(0, 74) then nui("recordView", {}) end                         -- H
-        if IsDisabledControlJustPressed(0, 244) then                                                  -- M
+        if take("seekback") then Play.Seek(Play.Goal() - Config.SeekSec * 1000) end
+        if take("seekfwd") then Play.Seek(Play.Goal() + Config.SeekSec * 1000) end
+        if take("speedup") then Play.speedIdx = math.min(#Config.Speeds, Play.speedIdx + 1) end
+        if take("speeddown") then Play.speedIdx = math.max(1, Play.speedIdx - 1) end
+        if take("prev") and Play.Switch(-1) then Play.lastSeg = nil; Cams.OnTargetChanged(GetEntityCoords(Play.cars[Play.target])) end
+        if take("next") and Play.Switch(1) then Play.lastSeg = nil; Cams.OnTargetChanged(GetEntityCoords(Play.cars[Play.target])) end
+        if take("camera") then Cams.Cycle(1) end
+        if take("hideui") then nui("recordView", {}) end
+        if take("mouse") then
             cursor = not cursor
             SetNuiFocus(cursor, cursor)
             SetNuiFocusKeepInput(cursor)
         end
-        if IsDisabledControlJustPressed(0, 29) then recToggle() end                                   -- B
-        if IsDisabledControlJustPressed(0, 47) then openEditor(); break end                           -- G
-        if IsDisabledControlJustPressed(0, 177) then stop(); break end                               -- BACKSPACE
+        if take("rec") then recToggle() end
+        if take("editor") then pressed = {}; openEditor(); break end
+        if take("exit") then pressed = {}; stop(); break end
+
+        if now - (keysAt or 0) > 2000 then keysAt = now; nui("keys", liveKeys()) end
 
         local s = Play.Step(dt)
         if Play.cutNow then Play.cutNow = false; Cams.Snap() end

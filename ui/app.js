@@ -214,5 +214,30 @@ window.addEventListener('message', (e) => {
       break
     case 'player': renderPlayer(data || {}); break
     case 'recordView': toggleRecordView(); break
+    case 'keys': renderKeys(data || {}); break
   }
 })
+
+// Hint row from the player's LIVE bindings (spz-core KeyFor, sent by
+// client/main.lua every couple of seconds while watching).
+let lastKeys = ''
+function renderKeys(k) {
+  const cap = (v, cls) => `<span class="kc${cls ? ' ' + cls : ''}">${esc(v || "?")}</span>`
+  const rows = [
+    [cap(k.play), 'PLAY'],
+    [cap(k.seekback) + cap(k.seekfwd), 'SEEK'],
+    [cap(k.speeddown) + cap(k.speedup), 'SPEED'],
+    [cap(k.prev) + cap(k.next), 'DRIVER'],
+    [cap(k.camera), 'CAMERA'],
+    [cap(k.hideui), 'HIDE UI'],
+    [cap(k.rec), 'REC'],
+    [cap(k.editor), 'EDITOR'],
+    [cap(k.mouse), 'MOUSE'],
+    [cap(k.exit, 'esc'), 'EXIT'],
+  ]
+  const html = rows.map(([c, l]) => `<span class="k">${c}${l}</span>`).join('')
+  if (html === lastKeys) return
+  lastKeys = html
+  $('pl-keys').innerHTML = html
+  if (k.hideui) $('pl-rvkey').textContent = k.hideui
+}
