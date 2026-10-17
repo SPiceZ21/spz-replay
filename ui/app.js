@@ -222,7 +222,8 @@ window.addEventListener('message', (e) => {
 // client/main.lua every couple of seconds while watching).
 let lastKeys = ''
 function renderKeys(k) {
-  const cap = (v, cls) => `<span class="kc${cls ? ' ' + cls : ''}">${esc(v || "?")}</span>`
+  // keycap or pictorial controller button (keyglyph.js); kc fallback if missing
+  const cap = (v) => (window.KeyGlyph ? KeyGlyph.html(v || '?') : `<span class="kc">${esc(v || '?')}</span>`)
   const rows = [
     [cap(k.play), 'PLAY'],
     [cap(k.seekback) + cap(k.seekfwd), 'SEEK'],
@@ -233,11 +234,11 @@ function renderKeys(k) {
     [cap(k.rec), 'REC'],
     [cap(k.editor), 'EDITOR'],
     [cap(k.mouse), 'MOUSE'],
-    [cap(k.exit, 'esc'), 'EXIT'],
+    [cap(k.exit), 'EXIT'],
   ]
   const html = rows.map(([c, l]) => `<span class="k">${c}${l}</span>`).join('')
   if (html === lastKeys) return
   lastKeys = html
   $('pl-keys').innerHTML = html
-  if (k.hideui) $('pl-rvkey').textContent = k.hideui
+  if (k.hideui) $('pl-rvkey').outerHTML = `<span id="pl-rvkey">${cap(k.hideui)}</span>`
 }

@@ -32,6 +32,8 @@ files {
   'ui/index.html',
   'ui/style.css',
   'ui/app.js',
+  'ui/keyglyph.js',
+  'ui/keyglyph.css',
   'ui/fonts/*.ttf',
 }
 

@@ -333,3 +333,9 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   border-radius: 5px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 .keys .kc.esc { color: var(--primary); border-color: rgba(var(--primary-rgb), 0.7); }
+
+/* glyphs (keyglyph.css): plain caps, replay accent where used */
+.keys, .rv-hint { --c: var(--primary); }
+.keys { gap: 8px 14px; padding: 4px 4px 0; }
+.keys .k .kg + .kg { margin-left: -2px; }
+.keys .k .kg { margin-right: 2px; }

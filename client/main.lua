@@ -5,7 +5,7 @@
 -- Bindings → FiveM — and the on-screen hint row shows the LIVE binding:
 --   SPACE play/pause · ←/→ seek · ↑/↓ speed · Q/E driver · C camera
 --   H hide UI · B Rockstar Editor rec/stop · G open Rockstar Editor
---   M mouse for the timeline · BACKSPACE exit
+--   TAB mouse for the timeline · BACKSPACE exit
 
 local watching = false
 local saved = nil          -- the viewer's ped state, restored on exit
@@ -26,7 +26,7 @@ local KEYS = {   -- name = { default key, description, controller button (or nil
     next      = { "E",      "Replay: next driver",            "R1_INDEX" },
     camera    = { "C",      "Replay: change camera",          "RUP_INDEX" },
     hideui    = { "H",      "Replay: hide / show UI",         "RLEFT_INDEX" },
-    mouse     = { "M",      "Replay: mouse for the timeline", nil },
+    mouse     = { "TAB",    "Replay: mouse for the timeline", nil },   -- not M: minigame hub
     rec       = { "B",      "Replay: Rockstar Editor record", "SELECT_INDEX" },
     editor    = { "G",      "Replay: open Rockstar Editor",   nil },
     exit      = { "BACK",   "Replay: exit",                   "RRIGHT_INDEX" },
@@ -45,7 +45,7 @@ local function take(name)
 end
 
 -- live labels for the hint row (re-sent while watching, so rebinds show up)
-local PRETTY_DEFAULT = { SPACE = "SPACE", LEFT = "←", RIGHT = "→", UP = "↑", DOWN = "↓", BACK = "BKSP" }
+local PRETTY_DEFAULT = { SPACE = "SPACE", LEFT = "←", RIGHT = "→", UP = "↑", DOWN = "↓", BACK = "BKSP", TAB = "TAB" }
 local function liveKeys()
     local out = {}
     for name, k in pairs(KEYS) do
