@@ -64,6 +64,8 @@ end
 
 local function openBrowser()
     if watching then return end
+    local okT, theme = pcall(function() return exports["spz-core"]:GetTheme() end)
+    if okT and theme then nui("theme", theme) end
     local res = lib.callback.await("spz-replay:list", false)
     nui("browser", res or { rows = {} })
     SetNuiFocus(true, true)
@@ -330,3 +332,6 @@ AddEventHandler("onResourceStop", function(res)
     DisplayRadar(true)
     SetNuiFocus(false, false)
 end)
+
+AddEventHandler("SPZ:themeUpdated", function(theme) nui("theme", theme) end)
+

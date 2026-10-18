@@ -208,6 +208,13 @@ window.addEventListener('message', (e) => {
   const { action, data } = e.data || {}
   switch (action) {
     case 'browser': renderBrowser(data); break
+    case 'theme':
+      if (data && /^#[0-9a-f]{6}$/i.test(data.accent || '')) {
+        const h = data.accent, r = document.documentElement.style
+        r.setProperty('--primary', h)
+        r.setProperty('--primary-rgb', [1, 3, 5].map(i => parseInt(h.substr(i, 2), 16)).join(', '))
+      }
+      break
     case 'browserClose': $('browser').classList.add('hidden'); break
     case 'loading':
       $('ld-track').textContent = data?.track || '—'
