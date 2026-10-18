@@ -76,6 +76,10 @@ RegisterNUICallback("closeBrowser", function(_, cb)
     cb("ok")
 end)
 
+-- spz-tutorial closes whatever it opened when the tour moves on.
+AddEventHandler("spz-tutorial:closeUI", function() if not watching then nui("browserClose", {}); SetNuiFocus(false, false) end end)
+
+
 RegisterNUICallback("refresh", function(_, cb)
     cb(lib.callback.await("spz-replay:list", false) or { rows = {} })
 end)

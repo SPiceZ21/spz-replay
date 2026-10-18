@@ -208,6 +208,7 @@ window.addEventListener('message', (e) => {
   const { action, data } = e.data || {}
   switch (action) {
     case 'browser': renderBrowser(data); break
+    case 'browserClose': $('browser').classList.add('hidden'); break
     case 'loading':
       $('ld-track').textContent = data?.track || '—'
       $('loading').classList.remove('hidden')
