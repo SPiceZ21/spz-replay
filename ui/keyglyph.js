@@ -13,7 +13,7 @@
 (function () {
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-  const FACE = { A: 'kg-a', B: 'kg-b', X: 'kg-x', Y: 'kg-y' };
+  const FACE = { 'PAD A': 'kg-a', 'PAD B': 'kg-b', 'PAD X': 'kg-x', 'PAD Y': 'kg-y' };   // keyboard A/B/X/Y stay keycaps
   const DPAD = { '↑': 'up', '↓': 'down', '←': 'left', '→': 'right' };
 
   function dpad(dir) {
@@ -27,7 +27,7 @@
   function html(label) {
     const k = String(label || '?').trim();
     const u = k.toUpperCase();
-    if (FACE[u]) return `<span class="kg kg-face ${FACE[u]}">${u}</span>`;
+    if (FACE[u]) return `<span class="kg kg-face ${FACE[u]}">${u.slice(4)}</span>`;
     if (u === 'LB' || u === 'RB') return `<span class="kg kg-bumper">${u}</span>`;
     if (u === 'LT' || u === 'RT') return `<span class="kg kg-trigger">${u}</span>`;
     if (u === 'LS' || u === 'RS') return `<span class="kg kg-stick">${u[0]}</span>`;
